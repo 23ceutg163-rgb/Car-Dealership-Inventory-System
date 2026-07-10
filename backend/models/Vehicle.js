@@ -20,10 +20,14 @@ const vehicleSchema = new mongoose.Schema(
         price: {
             type: Number,
             required: true,
+            // Price must be a non-negative value.
+            min: 0,
         },
         quantity: {
             type: Number,
             required: true,
+            // Quantity in stock must be a non-negative integer.
+            min: 0,
         },
     },
     { timestamps: true }
