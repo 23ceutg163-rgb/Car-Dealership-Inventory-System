@@ -98,3 +98,68 @@ it("should return 401 when no token is provided", async () => {
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── GET /api/vehicles ────────────────────────────────────────────────────────
+
+it("should return 200 with an array of all vehicles", async () => {
+
+    // Arrange — obtain a token and seed two vehicles
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Hatchback", price: 20000, quantity: 5 });
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0]).toHaveProperty("make");
+    expect(response.body[0]).toHaveProperty("model");
+    expect(response.body[0]).toHaveProperty("price");
+    expect(response.body[0]).toHaveProperty("quantity");
+
+});
+
+it("should return 200 with an empty array when no vehicles exist", async () => {
+
+    // Arrange — obtain a token, seed no vehicles
+
+    const token = await registerAndLogin();
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(0);
+
+});
+
+it("should return 401 when no token is provided for GET /api/vehicles", async () => {
+
+    // Arrange — no token
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles");
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
