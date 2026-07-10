@@ -18,3 +18,16 @@ export const addVehicle = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * GET /api/vehicles
+ * Returns an array of all vehicles in the inventory.
+ */
+export const getVehicles = async (req, res) => {
+    try {
+        const vehicles = await Vehicle.find();
+        return res.status(200).json(vehicles);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
