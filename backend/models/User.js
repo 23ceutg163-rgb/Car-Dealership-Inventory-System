@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
+            // Never return the password field in query results by default.
+            // Use .select('+password') explicitly only where comparison is needed.
+            select: false,
         },
         isAdmin: {
             type: Boolean,
