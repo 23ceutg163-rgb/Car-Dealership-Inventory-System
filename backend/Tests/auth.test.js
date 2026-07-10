@@ -28,6 +28,8 @@ afterAll(async () => {
     await mongoose.connection.close();
 });
 
+// ─── POST /api/auth/register ─────────────────────────────────────────────────
+
 it("should register a new user", async () => {
 
     const response = await request(app)
@@ -39,5 +41,78 @@ it("should register a new user", async () => {
         });
 
     expect(response.status).toBe(201);
+
+});
+
+// ─── POST /api/auth/login ─────────────────────────────────────────────────────
+
+it("should login an existing user and return 200 with a token", async () => {
+
+    // Arrange — seed a registered user via the existing endpoint
+    await request(app)
+        .post("/api/auth/register")
+        .send({
+            name: "Login User",
+            email: "loginuser@example.com",
+            password: "Password123!"
+        });
+
+    // Act
+    const response = await request(app)
+        .post("/api/auth/login")
+        .send({
+            email: "loginuser@example.com",
+            password: "Password123!"
+        });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("token");
+    expect(response.body).toHaveProperty("user");
+    expect(response.body.user).toHaveProperty("email", "loginuser@example.com");
+    expect(response.body.user).not.toHaveProperty("password");
+
+});
+
+it("should return 401 when the password is incorrect", async () => {
+
+    // Arrange — seed a registered user
+    await request(app)
+        .post("/api/auth/register")
+        .send({
+            name: "Login User",
+            email: "loginuser@example.com",
+            password: "Password123!"
+        });
+
+    // Act
+    const response = await request(app)
+        .post("/api/auth/login")
+        .send({
+            email: "loginuser@example.com",
+            password: "WrongPassword!"
+        });
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 404 when the email is not registered", async () => {
+
+    // Arrange — no user seeded for this email
+
+    // Act
+    const response = await request(app)
+        .post("/api/auth/login")
+        .send({
+            email: "nobody@example.com",
+            password: "Password123!"
+        });
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
 
 });
