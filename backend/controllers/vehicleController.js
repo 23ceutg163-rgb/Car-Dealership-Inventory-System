@@ -21,12 +21,16 @@ export const addVehicle = async (req, res) => {
 
 /**
  * GET /api/vehicles
- * Returns an array of all vehicles in the inventory.
+ * Returns an array of all vehicles in the inventory, sorted by newest first.
+ * Each document is converted to a plain object for consistent, clean serialisation.
  */
 export const getVehicles = async (req, res) => {
     try {
-        const vehicles = await Vehicle.find();
-        return res.status(200).json(vehicles);
+        // Sort newest-first for a predictable, production-sensible default order.
+        const vehicles = await Vehicle.find().sort({ createdAt: -1 });
+
+        // Mirror the addVehicle pattern: return plain objects, not Mongoose documents.
+        return res.status(200).json(vehicles.map((v) => v.toObject()));
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
