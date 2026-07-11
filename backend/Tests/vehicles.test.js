@@ -163,3 +163,197 @@ it("should return 401 when no token is provided for GET /api/vehicles", async ()
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── GET /api/vehicles/search ─────────────────────────────────────────────────
+
+it("should return 200 with vehicles matching the make query", async () => {
+
+    // Arrange — seed two vehicles with different makes
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Hatchback", price: 20000, quantity: 5 });
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles/search?make=Toyota")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toHaveProperty("make", "Toyota");
+
+});
+
+it("should return 200 with vehicles matching the model query", async () => {
+
+    // Arrange — seed two vehicles with different models
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Corolla", category: "Sedan", price: 20000, quantity: 8 });
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles/search?model=Corolla")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toHaveProperty("model", "Corolla");
+
+});
+
+it("should return 200 with vehicles matching the category query", async () => {
+
+    // Arrange — seed vehicles in different categories
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Ford", model: "F-150", category: "Truck", price: 40000, quantity: 3 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Sedan", price: 20000, quantity: 5 });
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles/search?category=Sedan")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(2);
+    expect(response.body.every((v) => v.category === "Sedan")).toBe(true);
+
+});
+
+it("should return 200 with vehicles within the specified price range", async () => {
+
+    // Arrange — seed vehicles at different price points
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Ford", model: "F-150", category: "Truck", price: 40000, quantity: 3 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Hatchback", price: 20000, quantity: 5 });
+
+    // Act — search for vehicles between 20000 and 30000
+    const response = await request(app)
+        .get("/api/vehicles/search?minPrice=20000&maxPrice=30000")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(2);
+    expect(response.body.every((v) => v.price >= 20000 && v.price <= 30000)).toBe(true);
+
+});
+
+it("should return 200 with vehicles matching combined make and category filters", async () => {
+
+    // Arrange — seed vehicles across makes and categories
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Hilux", category: "Truck", price: 38000, quantity: 4 });
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Sedan", price: 20000, quantity: 5 });
+
+    // Act — only Toyota Sedans
+    const response = await request(app)
+        .get("/api/vehicles/search?make=Toyota&category=Sedan")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toHaveProperty("make", "Toyota");
+    expect(response.body[0]).toHaveProperty("category", "Sedan");
+
+});
+
+it("should return 200 with an empty array when no vehicles match the search", async () => {
+
+    // Arrange — seed a vehicle that will NOT match
+    const token = await registerAndLogin();
+
+    await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    // Act — search for a make that doesn't exist
+    const response = await request(app)
+        .get("/api/vehicles/search?make=Ferrari")
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(0);
+
+});
+
+it("should return 401 when no token is provided for search", async () => {
+
+    // Arrange — no token
+
+    // Act
+    const response = await request(app)
+        .get("/api/vehicles/search?make=Toyota");
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
