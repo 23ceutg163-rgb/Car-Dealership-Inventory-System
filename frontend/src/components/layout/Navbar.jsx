@@ -12,7 +12,7 @@ const ROUTE_LABELS = {
   '/vehicles/add':      'Add Vehicle',
   '/inventory':         'Inventory',
   '/inventory/restock': 'Restock',
-  '/profile':           'Profile',
+  '/profile':           'My Profile',
 }
 
 export default function Navbar({ onMenuClick }) {

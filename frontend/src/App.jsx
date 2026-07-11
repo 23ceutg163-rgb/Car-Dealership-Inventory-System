@@ -23,6 +23,9 @@ import VehicleDetailPage  from '@/features/vehicles/pages/VehicleDetailPage'
 import InventoryPage from '@/features/inventory/pages/InventoryPage'
 import RestockPage   from '@/features/inventory/pages/RestockPage'
 
+// Profile
+import ProfilePage from '@/pages/ProfilePage'
+
 /**
  * Root router configuration.
  *
@@ -71,8 +74,8 @@ export default function App() {
             <Route path="/inventory/restock" element={<RestockPage />} />
           </Route>
 
-          {/* ── Phase 5 — Profile placeholder ── */}
-          <Route path="/profile" element={<DashboardPage />} />
+          {/* ── Profile ── */}
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 
