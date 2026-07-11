@@ -91,22 +91,31 @@ export const searchVehicles = async (req, res) => {
 
 /**
  * PUT /api/vehicles/:id
- * Partially updates an existing vehicle document.
+ * Partially updates an existing vehicle document using a $set merge.
+ * - $set ensures req.body is always treated as a plain field update,
+ *   preventing accidental MongoDB operator injection from client input.
+ * - runValidators ensures schema constraints (e.g. min:0) apply on update.
+ * - returnDocument:'after' is the non-deprecated form of {new:true}.
  * Returns 404 if no vehicle with the given id exists.
+ * Returns the updated document as a plain object.
  */
 export const updateVehicle = async (req, res) => {
     try {
         const vehicle = await Vehicle.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            { new: true }      // return the updated document, not the original
+            { $set: req.body },          // explicit $set prevents operator injection
+            {
+                returnDocument: "after", // non-deprecated replacement for { new: true }
+                runValidators: true,     // enforce schema constraints (min, required, etc.)
+            }
         );
 
         if (!vehicle) {
             return res.status(404).json({ error: "Vehicle not found" });
         }
 
-        return res.status(200).json(vehicle);
+        // Return a plain object — consistent with all other vehicle handlers.
+        return res.status(200).json(vehicle.toObject());
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
