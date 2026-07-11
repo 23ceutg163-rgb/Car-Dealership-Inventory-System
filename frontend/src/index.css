@@ -830,3 +830,30 @@ tbody tr:last-child {
 .animate-spin {
   animation: spin 0.7s linear infinite;
 }
+
+/* ─── Page Fade-In Transition ────────────────────────────────────────────── */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade-in {
+  animation: pageFadeIn 0.22s ease-out both;
+}
+
+/* ─── Pulse (active session dot) ─────────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+

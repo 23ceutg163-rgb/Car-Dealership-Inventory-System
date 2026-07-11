@@ -4,10 +4,13 @@ import { Plus } from 'lucide-react'
 import { useVehiclesQuery, useDeleteVehicleMutation } from '@/features/vehicles/hooks/useVehicles'
 import { useAuthContext } from '@/context/AuthContext'
 import { useDebounce } from '@/hooks/useDebounce'
-import VehicleTable from '../components/VehicleTable'
+import VehicleTable   from '../components/VehicleTable'
 import VehicleFilters from '../components/VehicleFilters'
-import DeleteDialog from '../components/DeleteDialog'
-import { Button } from '@/components/ui/Button'
+import DeleteDialog   from '../components/DeleteDialog'
+import Pagination     from '@/components/ui/Pagination'
+import { Button }     from '@/components/ui/Button'
+
+const PAGE_SIZE = 10
 
 /**
  * VehiclesPage — full vehicle list with search, filter, sort, and delete.
@@ -17,10 +20,13 @@ export default function VehiclesPage() {
   const { data: vehicles = [], isLoading } = useVehiclesQuery()
   const deleteMutation = useDeleteVehicleMutation()
 
-  // ── Filter / Search state ──────────────────────────────────────────────────
+  // ── Filter / Search state ───────────────────────────────────────────────────────
   const [search,      setSearch]      = useState('')
   const [category,    setCategory]    = useState('')
   const [stockFilter, setStockFilter] = useState('all')
+
+  // ── Pagination state ────────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1)
 
   // ── Sort state ─────────────────────────────────────────────────────────────
   const [sortKey, setSortKey] = useState('createdAt')
@@ -33,7 +39,13 @@ export default function VehiclesPage() {
       setSortKey(key)
       setSortDir('asc')
     }
+    setCurrentPage(1) // reset page on sort change
   }
+
+  // Reset page when filters/search change
+  function handleSearch(val)   { setSearch(val);      setCurrentPage(1) }
+  function handleCategory(val) { setCategory(val);    setCurrentPage(1) }
+  function handleStock(val)    { setStockFilter(val); setCurrentPage(1) }
 
   // ── Delete state ───────────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -91,6 +103,14 @@ export default function VehiclesPage() {
     return list
   }, [vehicles, debouncedSearch, category, stockFilter, sortKey, sortDir])
 
+  // ── Pagination slice ──────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const paginated = filtered.slice(
+    (safeCurrentPage - 1) * PAGE_SIZE,
+    safeCurrentPage * PAGE_SIZE
+  )
+
   return (
     <div>
       {/* ── Page header ── */}
@@ -112,24 +132,33 @@ export default function VehiclesPage() {
       {/* ── Filters ── */}
       <VehicleFilters
         search={search}
-        onSearch={setSearch}
+        onSearch={handleSearch}
         category={category}
-        onCategory={setCategory}
+        onCategory={handleCategory}
         stockFilter={stockFilter}
-        onStock={setStockFilter}
+        onStock={handleStock}
         total={vehicles.length}
         filtered={filtered.length}
       />
 
       {/* ── Table ── */}
       <VehicleTable
-        vehicles={filtered}
+        vehicles={paginated}
         isLoading={isLoading}
         isAdmin={isAdmin}
         onDelete={setDeleteTarget}
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={handleSort}
+      />
+
+      {/* ── Pagination ── */}
+      <Pagination
+        currentPage={safeCurrentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
       />
 
       {/* ── Delete confirmation dialog ── */}

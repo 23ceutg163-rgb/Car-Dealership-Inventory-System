@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import ScrollToTop from '@/components/shared/ScrollToTop'
 
 // Layout
 import AppLayout from '@/components/layout/AppLayout'
@@ -24,7 +25,8 @@ import InventoryPage from '@/features/inventory/pages/InventoryPage'
 import RestockPage   from '@/features/inventory/pages/RestockPage'
 
 // Profile
-import ProfilePage from '@/pages/ProfilePage'
+import ProfilePage   from '@/pages/ProfilePage'
+import NotFoundPage  from '@/pages/NotFoundPage'
 
 /**
  * Root router configuration.
@@ -46,6 +48,9 @@ import ProfilePage from '@/pages/ProfilePage'
 export default function App() {
   return (
     <Routes>
+      {/* ScrollToTop resets scroll position on every navigation */}
+      <Route path="*" element={<ScrollToTop />} />
+
       {/* ── Public routes ── */}
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -79,8 +84,8 @@ export default function App() {
         </Route>
       </Route>
 
-      {/* 404 fallback */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* 404 — catch-all for unknown routes */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Search, Bell, Menu, LogOut, User, Settings, ChevronDown } from 'lucide-react'
+import { NavLink, useNavigate, useLocation, useMatch } from 'react-router-dom'
+import { Search, Bell, Menu, LogOut, User, ChevronDown, ChevronRight } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthContext } from '@/context/AuthContext'
+import { vehicleKeys } from '@/features/vehicles/hooks/useVehicles'
 import { getInitials } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 
-// ── Route → label mapping for breadcrumbs ────────────────────────────────────
-const ROUTE_LABELS = {
+// ── Static route → label map ──────────────────────────────────────────────────
+const STATIC_LABELS = {
   '/dashboard':         'Dashboard',
   '/vehicles':          'Vehicles',
   '/vehicles/add':      'Add Vehicle',
@@ -15,10 +17,53 @@ const ROUTE_LABELS = {
   '/profile':           'My Profile',
 }
 
+/**
+ * useBreadcrumbs — builds a [{label, to}] array for the current route.
+ * For /vehicles/:id and /vehicles/:id/edit, reads the vehicle name from
+ * the TanStack Query cache so no extra API call is needed.
+ */
+function useBreadcrumbs() {
+  const location = useLocation()
+  const qc       = useQueryClient()
+
+  // Match dynamic vehicle routes
+  const vehicleDetailMatch = useMatch('/vehicles/:id')
+  const vehicleEditMatch   = useMatch('/vehicles/:id/edit')
+
+  const id = vehicleDetailMatch?.params?.id ?? vehicleEditMatch?.params?.id
+
+  // Read from cache (no fetch, instant)
+  const cached = id ? qc.getQueryData(vehicleKeys.detail(id)) : null
+  const vehicleName = cached ? `${cached.make} ${cached.model}` : (id ? 'Vehicle' : null)
+
+  const crumbs = [{ label: 'AutoVault', to: '/dashboard' }]
+  const path   = location.pathname
+
+  if (path.startsWith('/vehicles')) {
+    crumbs.push({ label: 'Vehicles', to: '/vehicles' })
+
+    if (vehicleEditMatch && vehicleName) {
+      crumbs.push({ label: vehicleName, to: `/vehicles/${id}` })
+      crumbs.push({ label: 'Edit', to: null })
+    } else if (vehicleDetailMatch && vehicleName) {
+      crumbs.push({ label: vehicleName, to: null })
+    } else if (path === '/vehicles/add') {
+      crumbs.push({ label: 'Add Vehicle', to: null })
+    }
+  } else {
+    const label = STATIC_LABELS[path]
+    if (label && path !== '/dashboard') {
+      crumbs.push({ label, to: null })
+    }
+  }
+
+  return crumbs
+}
+
 export default function Navbar({ onMenuClick }) {
   const { user, isAdmin, logout } = useAuthContext()
   const navigate  = useNavigate()
-  const location  = useLocation()
+  const crumbs    = useBreadcrumbs()
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -40,9 +85,6 @@ export default function Navbar({ onMenuClick }) {
     navigate('/login', { replace: true })
   }
 
-  // Build breadcrumb label from current path
-  const currentLabel = ROUTE_LABELS[location.pathname] ?? 'Page'
-
   return (
     <header className="navbar">
 
@@ -55,12 +97,31 @@ export default function Navbar({ onMenuClick }) {
         <Menu size={18} />
       </button>
 
-      {/* ── Breadcrumb ── */}
-      <div className="navbar-breadcrumb flex-1">
-        <span className="navbar-breadcrumb-home">AutoVault</span>
-        <span className="navbar-breadcrumb-sep">/</span>
-        <span className="navbar-breadcrumb-current">{currentLabel}</span>
-      </div>
+      {/* ── Dynamic breadcrumb ── */}
+      <nav className="navbar-breadcrumb flex-1" aria-label="Breadcrumb">
+        {crumbs.map((crumb, idx) => {
+          const isLast = idx === crumbs.length - 1
+          return (
+            <span key={idx} className="flex items-center gap-1">
+              {idx > 0 && (
+                <ChevronRight size={13} className="text-slate-300 flex-shrink-0" />
+              )}
+              {crumb.to && !isLast ? (
+                <NavLink
+                  to={crumb.to}
+                  className="navbar-breadcrumb-home hover:text-slate-700 transition-colors"
+                >
+                  {crumb.label}
+                </NavLink>
+              ) : (
+                <span className={isLast ? 'navbar-breadcrumb-current' : 'navbar-breadcrumb-home'}>
+                  {crumb.label}
+                </span>
+              )}
+            </span>
+          )
+        })}
+      </nav>
 
       {/* ── Search bar ── */}
       <div className="navbar-search">
@@ -72,6 +133,11 @@ export default function Navbar({ onMenuClick }) {
           placeholder="Search vehicles…"
           className="navbar-search-input"
           aria-label="Search vehicles"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+              navigate(`/vehicles?q=${encodeURIComponent(e.target.value.trim())}`)
+            }
+          }}
         />
       </div>
 

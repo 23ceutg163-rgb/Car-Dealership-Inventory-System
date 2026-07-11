@@ -1,20 +1,22 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import Navbar from './Navbar'
+import Navbar  from './Navbar'
 
 /**
  * AppLayout — the authenticated shell wrapping all dashboard pages.
  * Renders a fixed Sidebar + sticky Navbar + scrollable page Outlet.
- * Manages the sidebar collapsed/expanded toggle state.
+ * Uses location.key as a React key on the page wrapper to trigger a
+ * CSS fade-in animation on every route change.
  */
 export default function AppLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const location = useLocation()
 
-  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev)
+  const toggleSidebar      = () => setSidebarCollapsed((prev) => !prev)
   const toggleMobileSidebar = () => setMobileSidebarOpen((prev) => !prev)
-  const closeMobileSidebar = () => setMobileSidebarOpen(false)
+  const closeMobileSidebar  = () => setMobileSidebarOpen(false)
 
   return (
     <div className="app-shell">
@@ -34,16 +36,17 @@ export default function AppLayout() {
         onCloseMobile={closeMobileSidebar}
       />
 
-      <div
-        className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
-      >
+      <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Navbar
           sidebarCollapsed={sidebarCollapsed}
           onMenuClick={toggleMobileSidebar}
         />
 
-        <main className="page-content">
-          <Outlet />
+        {/* key=location.key re-mounts wrapper on route change, triggering page-fade-in */}
+        <main className="page-content" key={location.key}>
+          <div className="page-fade-in">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
