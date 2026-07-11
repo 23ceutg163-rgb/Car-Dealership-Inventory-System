@@ -1,5 +1,38 @@
 import Vehicle from "../models/Vehicle.js";
 
+// ─── Private Helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Builds a Mongoose filter object from the search query parameters.
+ * All parameters are optional and AND-combined when multiple are provided.
+ * Invalid numeric values (e.g. non-numeric strings) are silently ignored.
+ *
+ * @param {object} query - req.query from the Express request
+ * @returns {object} Mongoose-compatible filter object
+ */
+const buildSearchFilter = ({ make, model, category, minPrice, maxPrice }) => {
+    const filter = {};
+
+    if (make) filter.make = make;
+    if (model) filter.model = model;
+    if (category) filter.category = category;
+
+    // Parse price bounds and only apply them when the parsed value is a valid number.
+    // This prevents NaN leaking into the Mongoose query from malformed query strings.
+    const min = parseFloat(minPrice);
+    const max = parseFloat(maxPrice);
+
+    if (!isNaN(min) || !isNaN(max)) {
+        filter.price = {};
+        if (!isNaN(min)) filter.price.$gte = min;
+        if (!isNaN(max)) filter.price.$lte = max;
+    }
+
+    return filter;
+};
+
+// ─── Controllers ──────────────────────────────────────────────────────────────
+
 /**
  * POST /api/vehicles
  * Creates and persists a new vehicle document.
@@ -40,28 +73,17 @@ export const getVehicles = async (req, res) => {
  * GET /api/vehicles/search
  * Searches vehicles by make, model, category, and/or price range.
  * All query parameters are optional and are AND-combined when multiple are provided.
+ * Results are sorted newest-first for a consistent, predictable response order.
  */
 export const searchVehicles = async (req, res) => {
     try {
-        const { make, model, category, minPrice, maxPrice } = req.query;
+        const filter = buildSearchFilter(req.query);
 
-        // Build the filter object dynamically from whichever query params are present.
-        const filter = {};
+        // Apply the same newest-first sort used by getVehicles for consistency.
+        const vehicles = await Vehicle.find(filter).sort({ createdAt: -1 });
 
-        if (make) filter.make = make;
-        if (model) filter.model = model;
-        if (category) filter.category = category;
-
-        // Price range: add $gte and/or $lte only when the respective param is provided.
-        if (minPrice || maxPrice) {
-            filter.price = {};
-            if (minPrice) filter.price.$gte = Number(minPrice);
-            if (maxPrice) filter.price.$lte = Number(maxPrice);
-        }
-
-        const vehicles = await Vehicle.find(filter);
-
-        return res.status(200).json(vehicles);
+        // Return plain objects — consistent with addVehicle and getVehicles.
+        return res.status(200).json(vehicles.map((v) => v.toObject()));
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
