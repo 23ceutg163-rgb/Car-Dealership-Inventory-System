@@ -149,7 +149,11 @@ export const deleteVehicle = async (req, res) => {
  * POST /api/vehicles/:id/purchase
  * Decrements the vehicle's quantity by 1.
  * Returns 404 if no vehicle with the given id exists.
- * Returns 400 if the vehicle is out of stock (quantity === 0).
+ * Returns 400 if the vehicle has no stock remaining (quantity <= 0).
+ *
+ * Uses an explicit read → check → write pattern rather than a single
+ * atomic findOneAndUpdate so that the out-of-stock guard can be evaluated
+ * in application code and return a meaningful 400 error to the client.
  */
 export const purchaseVehicle = async (req, res) => {
     try {
@@ -159,14 +163,16 @@ export const purchaseVehicle = async (req, res) => {
             return res.status(404).json({ error: "Vehicle not found" });
         }
 
-        if (vehicle.quantity === 0) {
+        // Guard against zero AND any unexpected negative quantity in the DB.
+        if (vehicle.quantity <= 0) {
             return res.status(400).json({ error: "Vehicle is out of stock" });
         }
 
         vehicle.quantity -= 1;
         await vehicle.save();
 
-        return res.status(200).json(vehicle);
+        // Return a plain object — consistent with all other vehicle handlers.
+        return res.status(200).json(vehicle.toObject());
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
