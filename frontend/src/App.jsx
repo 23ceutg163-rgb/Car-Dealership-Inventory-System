@@ -11,7 +11,7 @@ import LoginPage    from '@/features/auth/pages/LoginPage'
 import RegisterPage from '@/features/auth/pages/RegisterPage'
 
 // App pages
-import DashboardPlaceholder from '@/pages/DashboardPlaceholder'
+import DashboardPage from '@/pages/DashboardPage'
 
 /**
  * Root router configuration.
@@ -40,16 +40,16 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
 
           {/* Dashboard */}
-          <Route path="/dashboard" element={<DashboardPlaceholder />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
 
           {/* Phase 3 — Vehicles (placeholder) */}
-          <Route path="/vehicles/*" element={<DashboardPlaceholder />} />
+          <Route path="/vehicles/*" element={<DashboardPage />} />
 
           {/* Phase 4 — Inventory (placeholder) */}
-          <Route path="/inventory/*" element={<DashboardPlaceholder />} />
+          <Route path="/inventory/*" element={<DashboardPage />} />
 
           {/* Phase 5 — Profile (placeholder) */}
-          <Route path="/profile" element={<DashboardPlaceholder />} />
+          <Route path="/profile" element={<DashboardPage />} />
         </Route>
       </Route>
 
