@@ -357,3 +357,67 @@ it("should return 401 when no token is provided for search", async () => {
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── PUT /api/vehicles/:id ────────────────────────────────────────────────────
+
+it("should update a vehicle and return 200 with the updated data", async () => {
+
+    // Arrange — seed a vehicle via the existing POST endpoint, then get its _id
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — update the price and quantity
+    const response = await request(app)
+        .put(`/api/vehicles/${vehicleId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ price: 27000, quantity: 8 });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("_id", vehicleId);
+    expect(response.body).toHaveProperty("make", "Toyota");
+    expect(response.body).toHaveProperty("model", "Camry");
+    expect(response.body).toHaveProperty("price", 27000);
+    expect(response.body).toHaveProperty("quantity", 8);
+
+});
+
+it("should return 404 when updating a vehicle that does not exist", async () => {
+
+    // Arrange — use a valid but non-existent MongoDB ObjectId
+    const token = await registerAndLogin();
+    const nonExistentId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .put(`/api/vehicles/${nonExistentId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ price: 30000 });
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 401 when no token is provided for PUT /api/vehicles/:id", async () => {
+
+    // Arrange — no token, any id
+    const fakeId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .put(`/api/vehicles/${fakeId}`)
+        .send({ price: 30000 });
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
