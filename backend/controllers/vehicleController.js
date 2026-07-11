@@ -144,3 +144,30 @@ export const deleteVehicle = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * POST /api/vehicles/:id/purchase
+ * Decrements the vehicle's quantity by 1.
+ * Returns 404 if no vehicle with the given id exists.
+ * Returns 400 if the vehicle is out of stock (quantity === 0).
+ */
+export const purchaseVehicle = async (req, res) => {
+    try {
+        const vehicle = await Vehicle.findById(req.params.id);
+
+        if (!vehicle) {
+            return res.status(404).json({ error: "Vehicle not found" });
+        }
+
+        if (vehicle.quantity === 0) {
+            return res.status(400).json({ error: "Vehicle is out of stock" });
+        }
+
+        vehicle.quantity -= 1;
+        await vehicle.save();
+
+        return res.status(200).json(vehicle);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
