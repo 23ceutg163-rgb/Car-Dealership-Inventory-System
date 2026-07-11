@@ -88,3 +88,26 @@ export const searchVehicles = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * PUT /api/vehicles/:id
+ * Partially updates an existing vehicle document.
+ * Returns 404 if no vehicle with the given id exists.
+ */
+export const updateVehicle = async (req, res) => {
+    try {
+        const vehicle = await Vehicle.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }      // return the updated document, not the original
+        );
+
+        if (!vehicle) {
+            return res.status(404).json({ error: "Vehicle not found" });
+        }
+
+        return res.status(200).json(vehicle);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

@@ -1,6 +1,6 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
-import { addVehicle, getVehicles, searchVehicles } from "../controllers/vehicleController.js";
+import { addVehicle, getVehicles, searchVehicles, updateVehicle } from "../controllers/vehicleController.js";
 
 const router = express.Router();
 
@@ -13,5 +13,8 @@ router.get("/search", protect, searchVehicles);
 
 // GET /api/vehicles — protected
 router.get("/", protect, getVehicles);
+
+// PUT /api/vehicles/:id — protected
+router.put("/:id", protect, updateVehicle);
 
 export default router;
