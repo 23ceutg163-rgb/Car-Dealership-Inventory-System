@@ -35,3 +35,34 @@ export const getVehicles = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * GET /api/vehicles/search
+ * Searches vehicles by make, model, category, and/or price range.
+ * All query parameters are optional and are AND-combined when multiple are provided.
+ */
+export const searchVehicles = async (req, res) => {
+    try {
+        const { make, model, category, minPrice, maxPrice } = req.query;
+
+        // Build the filter object dynamically from whichever query params are present.
+        const filter = {};
+
+        if (make) filter.make = make;
+        if (model) filter.model = model;
+        if (category) filter.category = category;
+
+        // Price range: add $gte and/or $lte only when the respective param is provided.
+        if (minPrice || maxPrice) {
+            filter.price = {};
+            if (minPrice) filter.price.$gte = Number(minPrice);
+            if (maxPrice) filter.price.$lte = Number(maxPrice);
+        }
+
+        const vehicles = await Vehicle.find(filter);
+
+        return res.status(200).json(vehicles);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

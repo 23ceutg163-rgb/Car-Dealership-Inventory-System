@@ -1,11 +1,15 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
-import { addVehicle, getVehicles } from "../controllers/vehicleController.js";
+import { addVehicle, getVehicles, searchVehicles } from "../controllers/vehicleController.js";
 
 const router = express.Router();
 
 // POST /api/vehicles — protected
 router.post("/", protect, addVehicle);
+
+// GET /api/vehicles/search — protected
+// Must be registered BEFORE GET / to prevent Express matching 'search' as a param.
+router.get("/search", protect, searchVehicles);
 
 // GET /api/vehicles — protected
 router.get("/", protect, getVehicles);
