@@ -741,3 +741,65 @@ it("should return 401 when no token is provided for POST /api/vehicles/:id/resto
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── GET /api/vehicles/:id ────────────────────────────────────────────────────
+
+it("should return 200 with the correct vehicle when given a valid id", async () => {
+
+    // Arrange — seed a vehicle, capture its _id
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act
+    const response = await request(app)
+        .get(`/api/vehicles/${vehicleId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert — response must match the seeded vehicle exactly
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("_id", vehicleId);
+    expect(response.body).toHaveProperty("make", "Toyota");
+    expect(response.body).toHaveProperty("model", "Camry");
+    expect(response.body).toHaveProperty("category", "Sedan");
+    expect(response.body).toHaveProperty("price", 25000);
+    expect(response.body).toHaveProperty("quantity", 10);
+
+});
+
+it("should return 404 when the vehicle id does not exist", async () => {
+
+    // Arrange — valid ObjectId format but not in the database
+    const token = await registerAndLogin();
+    const nonExistentId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .get(`/api/vehicles/${nonExistentId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 401 when no token is provided for GET /api/vehicles/:id", async () => {
+
+    // Arrange — no token
+    const fakeId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .get(`/api/vehicles/${fakeId}`);
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
