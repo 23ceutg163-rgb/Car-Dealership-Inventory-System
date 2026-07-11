@@ -215,7 +215,7 @@ export const restockVehicle = async (req, res) => {
 
 /**
  * GET /api/vehicles/:id
- * Returns a single vehicle document by its id.
+ * Returns a single vehicle document by its id as a plain object.
  * Returns 404 if no vehicle with the given id exists.
  */
 export const getVehicleById = async (req, res) => {
@@ -226,7 +226,8 @@ export const getVehicleById = async (req, res) => {
             return res.status(404).json({ error: "Vehicle not found" });
         }
 
-        return res.status(200).json(vehicle);
+        // Return a plain object — consistent with all other vehicle handlers.
+        return res.status(200).json(vehicle.toObject());
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

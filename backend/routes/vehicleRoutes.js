@@ -1,7 +1,17 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
 import adminOnly from "../middleware/adminMiddleware.js";
-import { addVehicle, getVehicles, searchVehicles, getVehicleById, updateVehicle, deleteVehicle, purchaseVehicle, restockVehicle } from "../controllers/vehicleController.js";
+import {
+    addVehicle,
+    getVehicles,
+    getVehicleById,
+    searchVehicles,
+    updateVehicle,
+    deleteVehicle,
+    purchaseVehicle,
+    restockVehicle,
+} from "../controllers/vehicleController.js";
+
 
 const router = express.Router();
 
