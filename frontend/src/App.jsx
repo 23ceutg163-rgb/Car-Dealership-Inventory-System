@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from '@/components/layout/AppLayout'
 
 // Route guards
-import ProtectedRoute from '@/components/shared/ProtectedRoute'
+import ProtectedRoute, { AdminRoute } from '@/components/shared/ProtectedRoute'
 
 // Auth pages
 import LoginPage    from '@/features/auth/pages/LoginPage'
@@ -19,6 +19,10 @@ import AddVehiclePage     from '@/features/vehicles/pages/AddVehiclePage'
 import EditVehiclePage    from '@/features/vehicles/pages/EditVehiclePage'
 import VehicleDetailPage  from '@/features/vehicles/pages/VehicleDetailPage'
 
+// Inventory
+import InventoryPage from '@/features/inventory/pages/InventoryPage'
+import RestockPage   from '@/features/inventory/pages/RestockPage'
+
 /**
  * Root router configuration.
  *
@@ -26,13 +30,14 @@ import VehicleDetailPage  from '@/features/vehicles/pages/VehicleDetailPage'
  *  /                    → redirect to /dashboard
  *  /login               → LoginPage (public)
  *  /register            → RegisterPage (public)
- *  / (ProtectedRoute)
+ *  / (ProtectedRoute → AppLayout)
  *    /dashboard         → DashboardPage
  *    /vehicles          → VehiclesPage
  *    /vehicles/add      → AddVehiclePage
  *    /vehicles/:id      → VehicleDetailPage
  *    /vehicles/:id/edit → EditVehiclePage
- *    /inventory/*       → placeholder (Phase 4)
+ *    /inventory         → InventoryPage
+ *    /inventory/restock → RestockPage (admin only)
  *    /profile           → placeholder (Phase 5)
  */
 export default function App() {
@@ -58,8 +63,13 @@ export default function App() {
           <Route path="/vehicles/:id"      element={<VehicleDetailPage />} />
           <Route path="/vehicles/:id/edit" element={<EditVehiclePage />} />
 
-          {/* ── Phase 4 — Inventory placeholder ── */}
-          <Route path="/inventory/*" element={<DashboardPage />} />
+          {/* ── Inventory (any authenticated user) ── */}
+          <Route path="/inventory" element={<InventoryPage />} />
+
+          {/* ── Restock (admin only) ── */}
+          <Route element={<AdminRoute />}>
+            <Route path="/inventory/restock" element={<RestockPage />} />
+          </Route>
 
           {/* ── Phase 5 — Profile placeholder ── */}
           <Route path="/profile" element={<DashboardPage />} />
