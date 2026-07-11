@@ -177,3 +177,32 @@ export const purchaseVehicle = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * POST /api/vehicles/:id/restock
+ * Admin-only. Increases the vehicle's quantity by the amount in req.body.quantity.
+ * Returns 400 if quantity is missing or not a positive number.
+ * Returns 404 if no vehicle with the given id exists.
+ */
+export const restockVehicle = async (req, res) => {
+    try {
+        const amount = req.body.quantity;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: "Restock quantity must be a positive number" });
+        }
+
+        const vehicle = await Vehicle.findById(req.params.id);
+
+        if (!vehicle) {
+            return res.status(404).json({ error: "Vehicle not found" });
+        }
+
+        vehicle.quantity += amount;
+        await vehicle.save();
+
+        return res.status(200).json(vehicle);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

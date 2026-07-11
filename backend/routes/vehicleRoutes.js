@@ -1,7 +1,7 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
 import adminOnly from "../middleware/adminMiddleware.js";
-import { addVehicle, getVehicles, searchVehicles, updateVehicle, deleteVehicle, purchaseVehicle } from "../controllers/vehicleController.js";
+import { addVehicle, getVehicles, searchVehicles, updateVehicle, deleteVehicle, purchaseVehicle, restockVehicle } from "../controllers/vehicleController.js";
 
 const router = express.Router();
 
@@ -23,5 +23,8 @@ router.delete("/:id", protect, adminOnly, deleteVehicle);
 
 // POST /api/vehicles/:id/purchase — protected
 router.post("/:id/purchase", protect, purchaseVehicle);
+
+// POST /api/vehicles/:id/restock — admin only
+router.post("/:id/restock", protect, adminOnly, restockVehicle);
 
 export default router;
