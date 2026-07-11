@@ -11,14 +11,14 @@ export function cn(...inputs) {
 }
 
 /**
- * Formats a number as USD currency.
+ * Formats a number as Indian Rupee (INR) currency.
  * @param {number} amount
- * @returns {string} e.g. "$25,000"
+ * @returns {string} e.g. "₹25,000" or "₹1,25,000"
  */
 export function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
