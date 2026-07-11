@@ -606,3 +606,138 @@ it("should return 401 when no token is provided for POST /api/vehicles/:id/purch
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── POST /api/vehicles/:id/restock (Admin only) ─────────────────────────────
+
+it("should restock a vehicle and return 200 with the updated quantity", async () => {
+
+    // Arrange — seed a vehicle with quantity 3, restock with 10 units
+    const token = await registerAndLogin();
+    const adminToken = await registerAndLoginAsAdmin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Ford", model: "F-150", category: "Truck", price: 40000, quantity: 3 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — admin adds 10 units
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/restock`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ quantity: 10 });
+
+    // Assert — quantity must be the original (3) plus the restocked amount (10)
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("quantity", 13);
+
+});
+
+it("should return 400 when restock quantity is missing", async () => {
+
+    // Arrange — admin token, existing vehicle, but no quantity in body
+    const token = await registerAndLogin();
+    const adminToken = await registerAndLoginAsAdmin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Ford", model: "Mustang", category: "Coupe", price: 35000, quantity: 5 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — send body without quantity
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/restock`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({});
+
+    // Assert
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 400 when restock quantity is not a positive number", async () => {
+
+    // Arrange — admin token, existing vehicle, quantity: 0 (invalid — zero adds nothing)
+    const token = await registerAndLogin();
+    const adminToken = await registerAndLoginAsAdmin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "BMW", model: "X5", category: "SUV", price: 60000, quantity: 5 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — zero is not a valid restock amount
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/restock`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ quantity: 0 });
+
+    // Assert
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 404 when restocking a vehicle that does not exist", async () => {
+
+    // Arrange — admin token, valid non-existent ObjectId
+    const adminToken = await registerAndLoginAsAdmin();
+    const nonExistentId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .post(`/api/vehicles/${nonExistentId}/restock`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ quantity: 10 });
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 403 when a non-admin user attempts to restock a vehicle", async () => {
+
+    // Arrange — regular user token (not admin)
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Tesla", model: "Model S", category: "Sedan", price: 80000, quantity: 2 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — regular user, NOT an admin
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/restock`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ quantity: 5 });
+
+    // Assert — must be forbidden, not just unauthorised
+    expect(response.status).toBe(403);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 401 when no token is provided for POST /api/vehicles/:id/restock", async () => {
+
+    // Arrange — no token
+    const fakeId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .post(`/api/vehicles/${fakeId}/restock`)
+        .send({ quantity: 10 });
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
