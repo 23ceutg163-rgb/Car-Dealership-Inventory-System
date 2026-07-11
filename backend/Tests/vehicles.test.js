@@ -421,3 +421,108 @@ it("should return 401 when no token is provided for PUT /api/vehicles/:id", asyn
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── DELETE /api/vehicles/:id (Admin only) ────────────────────────────────────
+
+/**
+ * Creates an admin user directly in the DB (bypassing register which forces isAdmin:false),
+ * then logs in via the existing login endpoint to receive a JWT with isAdmin:true in payload.
+ * The password is pre-hashed so the login endpoint can compare it correctly.
+ */
+const registerAndLoginAsAdmin = async () => {
+    const bcrypt = await import("bcrypt");
+    const hashedPassword = await bcrypt.default.hash("AdminPass123!", 10);
+
+    const User = (await import("../models/User.js")).default;
+    await User.create({
+        name: "Admin User",
+        email: "admin@example.com",
+        password: hashedPassword,
+        isAdmin: true,
+    });
+
+    const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: "admin@example.com", password: "AdminPass123!" });
+
+    return res.body.token;
+};
+
+it("should delete a vehicle and return 200 with a confirmation message", async () => {
+
+    // Arrange — seed a vehicle as a regular user, then delete it as admin
+    const token = await registerAndLogin();
+    const adminToken = await registerAndLoginAsAdmin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 10 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act
+    const response = await request(app)
+        .delete(`/api/vehicles/${vehicleId}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("message");
+
+});
+
+it("should return 403 when a non-admin user attempts to delete a vehicle", async () => {
+
+    // Arrange — seed a vehicle and try to delete it with a regular (non-admin) token
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Hatchback", price: 20000, quantity: 5 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — regular user, NOT an admin
+    const response = await request(app)
+        .delete(`/api/vehicles/${vehicleId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert — must be forbidden, not just unauthorised
+    expect(response.status).toBe(403);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 404 when deleting a vehicle that does not exist", async () => {
+
+    // Arrange — admin token, but a valid non-existent ObjectId
+    const adminToken = await registerAndLoginAsAdmin();
+    const nonExistentId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .delete(`/api/vehicles/${nonExistentId}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 401 when no token is provided for DELETE /api/vehicles/:id", async () => {
+
+    // Arrange — no token
+    const fakeId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .delete(`/api/vehicles/${fakeId}`);
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
