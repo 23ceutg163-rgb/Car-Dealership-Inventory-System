@@ -181,14 +181,19 @@ export const purchaseVehicle = async (req, res) => {
 /**
  * POST /api/vehicles/:id/restock
  * Admin-only. Increases the vehicle's quantity by the amount in req.body.quantity.
- * Returns 400 if quantity is missing or not a positive number.
+ * Returns 400 if quantity is missing, not a number, or not a positive value.
  * Returns 404 if no vehicle with the given id exists.
+ * Returns the updated document as a plain object.
+ *
+ * The typeof guard is intentional: a string "10" passes !amount but would cause
+ * string concatenation instead of numeric addition on vehicle.quantity.
  */
 export const restockVehicle = async (req, res) => {
     try {
         const amount = req.body.quantity;
 
-        if (!amount || amount <= 0) {
+        // Reject missing, non-numeric, and non-positive values before any DB access.
+        if (typeof amount !== "number" || amount <= 0) {
             return res.status(400).json({ error: "Restock quantity must be a positive number" });
         }
 
@@ -201,7 +206,8 @@ export const restockVehicle = async (req, res) => {
         vehicle.quantity += amount;
         await vehicle.save();
 
-        return res.status(200).json(vehicle);
+        // Return a plain object — consistent with all other vehicle handlers.
+        return res.status(200).json(vehicle.toObject());
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
