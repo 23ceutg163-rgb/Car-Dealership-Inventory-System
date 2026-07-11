@@ -125,6 +125,7 @@ export const updateVehicle = async (req, res) => {
  * DELETE /api/vehicles/:id
  * Admin-only. Permanently removes a vehicle document from the inventory.
  * Returns 404 if no vehicle with the given id exists.
+ * On success, returns 200 with a confirmation message and the deleted document's id.
  */
 export const deleteVehicle = async (req, res) => {
     try {
@@ -134,7 +135,11 @@ export const deleteVehicle = async (req, res) => {
             return res.status(404).json({ error: "Vehicle not found" });
         }
 
-        return res.status(200).json({ message: "Vehicle deleted successfully" });
+        // Include the deleted id so the client can confirm which document was removed.
+        return res.status(200).json({
+            message: "Vehicle deleted successfully",
+            id: vehicle._id,
+        });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
