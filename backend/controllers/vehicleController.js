@@ -212,3 +212,22 @@ export const restockVehicle = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * GET /api/vehicles/:id
+ * Returns a single vehicle document by its id.
+ * Returns 404 if no vehicle with the given id exists.
+ */
+export const getVehicleById = async (req, res) => {
+    try {
+        const vehicle = await Vehicle.findById(req.params.id);
+
+        if (!vehicle) {
+            return res.status(404).json({ error: "Vehicle not found" });
+        }
+
+        return res.status(200).json(vehicle);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

@@ -1,7 +1,7 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
 import adminOnly from "../middleware/adminMiddleware.js";
-import { addVehicle, getVehicles, searchVehicles, updateVehicle, deleteVehicle, purchaseVehicle, restockVehicle } from "../controllers/vehicleController.js";
+import { addVehicle, getVehicles, searchVehicles, getVehicleById, updateVehicle, deleteVehicle, purchaseVehicle, restockVehicle } from "../controllers/vehicleController.js";
 
 const router = express.Router();
 
@@ -14,6 +14,10 @@ router.get("/search", protect, searchVehicles);
 
 // GET /api/vehicles — protected
 router.get("/", protect, getVehicles);
+
+// GET /api/vehicles/:id — protected
+// Must be registered AFTER GET /search to prevent 'search' being matched as an :id param.
+router.get("/:id", protect, getVehicleById);
 
 // PUT /api/vehicles/:id — protected
 router.put("/:id", protect, updateVehicle);
