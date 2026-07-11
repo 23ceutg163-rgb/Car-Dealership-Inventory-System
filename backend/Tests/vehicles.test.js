@@ -526,3 +526,83 @@ it("should return 401 when no token is provided for DELETE /api/vehicles/:id", a
     expect(response.body).toHaveProperty("error");
 
 });
+
+// ─── POST /api/vehicles/:id/purchase ─────────────────────────────────────────
+
+it("should purchase a vehicle and return 200 with the updated quantity", async () => {
+
+    // Arrange — seed a vehicle with quantity 5
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Toyota", model: "Camry", category: "Sedan", price: 25000, quantity: 5 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — purchase one unit
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/purchase`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert — quantity must have decreased by exactly 1
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("quantity", 4);
+
+});
+
+it("should return 400 when attempting to purchase an out-of-stock vehicle", async () => {
+
+    // Arrange — seed a vehicle with quantity 0 (out of stock)
+    const token = await registerAndLogin();
+
+    const createRes = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ make: "Honda", model: "Civic", category: "Hatchback", price: 20000, quantity: 0 });
+
+    const vehicleId = createRes.body._id;
+
+    // Act — attempt to purchase when stock is zero
+    const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/purchase`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert — must be rejected before decrement to avoid going below 0
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 404 when purchasing a vehicle that does not exist", async () => {
+
+    // Arrange — valid ObjectId format but not in the database
+    const token = await registerAndLogin();
+    const nonExistentId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .post(`/api/vehicles/${nonExistentId}/purchase`)
+        .set("Authorization", `Bearer ${token}`);
+
+    // Assert
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("error");
+
+});
+
+it("should return 401 when no token is provided for POST /api/vehicles/:id/purchase", async () => {
+
+    // Arrange — no token
+    const fakeId = new mongoose.Types.ObjectId();
+
+    // Act
+    const response = await request(app)
+        .post(`/api/vehicles/${fakeId}/purchase`);
+
+    // Assert
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error");
+
+});
