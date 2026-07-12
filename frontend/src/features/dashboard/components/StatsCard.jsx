@@ -52,7 +52,7 @@ export default function StatsCard({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-500 mb-1 truncate">{title}</p>
-        <p className="text-2xl font-bold text-slate-900 tracking-tight leading-none mb-1">
+        <p className="text-xl font-bold text-slate-900 tracking-tight leading-tight mb-1 break-words">
           {value}
         </p>
         {subtitle && (
